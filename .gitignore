@@ -46,3 +46,4 @@ Thumbs.db
 # Local test samplesheets
 samplesheet_funcmap_test.csv
 *.old
+funcmap.config
