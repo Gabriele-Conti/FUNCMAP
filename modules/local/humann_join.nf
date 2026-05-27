@@ -1,0 +1,223 @@
+process HUMANN_JOIN {
+
+  tag "humann_join"
+  container params.funcmap_container
+
+  publishDir "${params.outdir}/MERGED_TABLES",
+    mode: 'copy',
+    pattern: "JOIN_WORK/humann_merged_*",
+    overwrite: true,
+    saveAs: { filename ->
+        filename.toString().replaceFirst(/^JOIN_WORK\//,'')
+    }
+
+  input:
+  tuple val(sample_ids), path(humann_tables, name: 'HUMANN_INPUT_TABLES/*')
+
+  output:
+  path "JOIN_WORK/humann_merged_*"
+
+  script:
+  """
+  set -euo pipefail
+
+  echo "===== HUMANN_JOIN: global merge ====="
+
+  INPUT_DIR="HUMANN_INPUT_TABLES"
+  JOIN_WORK="JOIN_WORK"
+  mkdir -p "\$JOIN_WORK"
+
+  JOIN_WORK_ABS="\$(readlink -f "\$JOIN_WORK")"
+  SAMPLE_IDS="\$JOIN_WORK_ABS/sample_ids.txt"
+  SAMPLE_IDS_SORTED="\$JOIN_WORK_ABS/sample_ids_sorted.txt"
+  SUFFIX_ALL="\$JOIN_WORK_ABS/humann_suffixes_all.txt"
+  SUFFIX_KEEP="\$JOIN_WORK_ABS/humann_suffixes_keep.txt"
+
+  : > "\$SUFFIX_ALL"
+  : > "\$SUFFIX_KEEP"
+
+  cat > "\$SAMPLE_IDS" <<'EOF_SAMPLE_IDS'
+${sample_ids.join('\n')}
+EOF_SAMPLE_IDS
+
+  awk 'NF { print length(\$0), \$0 }' "\$SAMPLE_IDS" | sort -nr | cut -d' ' -f2- > "\$SAMPLE_IDS_SORTED"
+
+  if [ ! -d "\$INPUT_DIR" ]; then
+      echo "[ERROR] Input directory not staged by Nextflow: \$INPUT_DIR"
+      exit 1
+  fi
+
+  echo "[INFO] Using HUMAnN tables staged by Nextflow in: \$INPUT_DIR"
+  echo "[INFO] Number of sample IDs received: \$(wc -l < "\$SAMPLE_IDS")"
+  echo "[INFO] Number of staged TSV entries: \$(find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | wc -l)"
+
+  if ! find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | grep -q .; then
+      echo "[ERROR] No HUMAnN TSV files were staged for merging"
+      echo "[DEBUG] Content of \$INPUT_DIR:"
+      ls -lah "\$INPUT_DIR" || true
+      find "\$INPUT_DIR" -maxdepth 2 -ls || true
+      exit 1
+  fi
+
+  echo "[INFO] Staged HUMAnN TSV entries:"
+  find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' -printf '  %f\\n' | sort
+
+  echo "[INFO] Discovering HUMAnN table suffixes from staged files..."
+
+  find "\$INPUT_DIR" -maxdepth 1 -name "*.tsv" | sort | while read -r f; do
+      base="\$(basename "\$f")"
+      matched="false"
+
+      while read -r sample_id; do
+          [ -z "\$sample_id" ] && continue
+
+          case "\$base" in
+              "\${sample_id}"_*.tsv)
+                  suffix="_\${base#\${sample_id}_}"
+                  echo "\$suffix" >> "\$SUFFIX_ALL"
+                  matched="true"
+                  break
+                  ;;
+          esac
+      done < "\$SAMPLE_IDS_SORTED"
+
+      if [ "\$matched" != "true" ]; then
+          echo "[WARN] Skipping file with unexpected naming: \$base" >&2
+          echo "[WARN] Expected naming: <sample_id>_<table_type>_<unit>.tsv" >&2
+      fi
+  done
+
+  sort -u "\$SUFFIX_ALL" -o "\$SUFFIX_ALL"
+
+  if [ ! -s "\$SUFFIX_ALL" ]; then
+      echo "[ERROR] No HUMAnN TSV suffixes discovered from staged inputs"
+      echo "[ERROR] Staged files were:"
+      find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' -printf '  %f\\n' | sort
+      exit 1
+  fi
+
+  echo "[INFO] Discovered suffixes before named filtering:"
+  cat "\$SUFFIX_ALL"
+
+  should_skip_non_named() {
+      local suffix="\$1"
+      local named_suffix=""
+
+      case "\$suffix" in
+          _ko.tsv)
+              named_suffix="_ko_named.tsv"
+              ;;
+          _ko_*.tsv)
+              named_suffix="\${suffix/_ko_/_ko_named_}"
+              ;;
+          _module.tsv)
+              named_suffix="_module_named.tsv"
+              ;;
+          _module_*.tsv)
+              named_suffix="\${suffix/_module_/_module_named_}"
+              ;;
+          _pathway.tsv)
+              named_suffix="_pathway_named.tsv"
+              ;;
+          _pathway_*.tsv)
+              named_suffix="\${suffix/_pathway_/_pathway_named_}"
+              ;;
+          _pfam.tsv)
+              named_suffix="_pfam_named.tsv"
+              ;;
+          _pfam_*.tsv)
+              named_suffix="\${suffix/_pfam_/_pfam_named_}"
+              ;;
+          _eggnog.tsv)
+              named_suffix="_eggnog_named.tsv"
+              ;;
+          _eggnog_*.tsv)
+              named_suffix="\${suffix/_eggnog_/_eggnog_named_}"
+              ;;
+          *)
+              return 1
+              ;;
+      esac
+
+      if [ -n "\$named_suffix" ] && grep -Fxq "\$named_suffix" "\$SUFFIX_ALL"; then
+          return 0
+      else
+          return 1
+      fi
+  }
+
+  while read -r suffix; do
+      [ -z "\$suffix" ] && continue
+
+      if should_skip_non_named "\$suffix"; then
+          echo "[INFO] Skipping non-named table because named version exists: \$suffix"
+      else
+          echo "\$suffix" >> "\$SUFFIX_KEEP"
+      fi
+  done < "\$SUFFIX_ALL"
+
+  sort -u "\$SUFFIX_KEEP" -o "\$SUFFIX_KEEP"
+
+  if [ ! -s "\$SUFFIX_KEEP" ]; then
+      echo "[ERROR] No HUMAnN suffixes left after named filtering"
+      exit 1
+  fi
+
+  echo "[INFO] Final suffixes selected for merge:"
+  cat "\$SUFFIX_KEEP"
+
+  join_table() {
+    local suffix="\$1"
+
+    local clean_suffix
+    clean_suffix="\${suffix#_}"
+    clean_suffix="\${clean_suffix%.tsv}"
+
+    local output="\$JOIN_WORK_ABS/humann_merged_\${clean_suffix}.tsv"
+    local stage_dir="\$JOIN_WORK_ABS/stage_\${clean_suffix}"
+
+    echo "[JOIN] suffix=\$suffix"
+    echo "[JOIN] output=\$output"
+    echo "[JOIN] stage_dir=\$stage_dir"
+
+    rm -rf "\$stage_dir"
+    mkdir -p "\$stage_dir"
+    rm -f "\$output"
+
+    find "\$INPUT_DIR" -maxdepth 1 -name "*\$suffix" | sort | while read -r f; do
+        base="\$(basename "\$f")"
+        cp "\$f" "\$stage_dir/\$base"
+    done
+
+    if ! ls "\$stage_dir"/*"\$suffix" >/dev/null 2>&1; then
+        echo "[ERROR] No files staged for suffix: \$suffix"
+        echo "[DEBUG] Available input files:"
+        find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' -printf '  %f\\n' | sort
+        exit 1
+    fi
+
+    echo "[INFO] Files staged for suffix \$suffix:"
+    ls -lh "\$stage_dir"/*"\$suffix"
+
+    humann_join_tables \\
+      --input "\$stage_dir" \\
+      --file_name "\$suffix" \\
+      --output "\$output"
+
+    if [ ! -s "\$output" ]; then
+        echo "[ERROR] humann_join_tables did not create output: \$output"
+        exit 1
+    fi
+
+    rm -rf "\$stage_dir"
+  }
+
+  while read -r suffix; do
+      [ -z "\$suffix" ] && continue
+      join_table "\$suffix"
+  done < "\$SUFFIX_KEEP"
+
+  echo "[INFO] HUMANN_JOIN finished. Merged tables:"
+  ls -lh "\$JOIN_WORK_ABS"/humann_merged_*
+  """
+}

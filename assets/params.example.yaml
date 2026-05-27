@@ -1,0 +1,63 @@
+# FUNCMAP example params file
+#
+# This file contains portable defaults only.
+# In production, pass project-specific paths from the command line or from a
+# copied project-specific params file.
+
+# ------------------------------------------------------------
+# Workflow switches
+# ------------------------------------------------------------
+
+run_humann: true
+run_amr: true
+
+# ------------------------------------------------------------
+# HUMAnN renormalization
+# ------------------------------------------------------------
+
+# Allowed values:
+#   raw       = non-normalized HUMAnN tables only
+#   relab     = relative abundance tables only
+#   cpm       = CPM-normalized tables only
+#   relab_cpm = relative abundance + CPM tables
+#   full      = raw + relative abundance + CPM tables
+humann_renorm_units: full
+
+# ------------------------------------------------------------
+# AMR/RGI-CARD bwt parameters
+# ------------------------------------------------------------
+
+# RGI bwt aligner. Supported by RGI: kma, bowtie2, bwa
+amr_aligner: kma
+
+# Include WildCARD/prevalence-derived allelic variants.
+amr_include_wildcard: false
+
+# Include additional CARD model types beyond standard protein homolog models.
+amr_include_other_models: false
+
+# Optional filters passed directly to rgi bwt.
+# Use null to keep RGI defaults.
+amr_mapq: null
+amr_coverage: null
+
+# Save final BAM/BAI files produced by RGI.
+# false is recommended for routine runs because BAM files can be large.
+amr_save_bam: false
+
+# ------------------------------------------------------------
+# AMR parser / abundance table parameters
+# ------------------------------------------------------------
+
+# If false, AMR tables are generated from all RGI hits and thresholds are
+# reported only in QC. If true, only hits passing the thresholds below are used.
+amr_apply_filters: false
+
+amr_min_reads: 10
+amr_min_coverage: 55
+amr_min_mapq: 10
+
+# Metric used to calculate AMR relative abundance.
+# rpkm = relative abundance calculated from RPKM values
+# raw  = relative abundance calculated from raw counts
+amr_relab_from: rpkm

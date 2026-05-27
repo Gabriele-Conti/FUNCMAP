@@ -1,0 +1,5 @@
+tool,db_name,db_params,db_path
+humann,chocophlan,,/path/to/humann/chocophlan
+humann,uniref90,,/path/to/humann/uniref90
+humann,full_mapping_v201901b,,/path/to/humann/full_mapping_v201901b
+rgi,card,local,/path/to/CARD_RGI

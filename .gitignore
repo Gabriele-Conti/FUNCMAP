@@ -1,0 +1,48 @@
+# Nextflow
+.nextflow*
+work/
+results/
+results_test/
+.nextflow.log*
+timeline.html
+report.html
+trace.txt
+dag.html
+
+# FUNCMAP local run files
+funcmap_launch.sbatch
+params_funcmap.yaml
+databases_funcmap.csv
+samplesheet*.csv
+runs.log
+
+# Slurm
+slurm-*.out
+slurm-*.err
+slurm_*.out
+slurm_*.err
+
+# Logs
+*.log
+*.out
+*.err
+
+# Python
+__pycache__/
+*.pyc
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local backups / archives
+*.backup
+*.bak
+*.zip
+*.tar.gz
+
+# Local test samplesheets
+samplesheet_funcmap_test.csv
+*.old
