@@ -1,14 +1,12 @@
 # FUNCMAP
 
-FUNCMAP is a Nextflow DSL2 pipeline for functional profiling of shotgun metagenomic data.
+FUNCMAP is a Nextflow DSL2 pipeline for read-mapping-based functional profiling of shotgun metagenomic data after taxonomic profiling.
 
-It integrates HUMAnN-based microbial functional profiling with AMR/RGI-CARD resistome analysis, producing both per-sample outputs and merged downstream-ready abundance tables.
+The pipeline was designed to complement upstream taxonomic profiling workflows, such as MetaPhlAn-based analyses and public pipelines including nf-core/taxprofiler. FUNCMAP starts from quality-controlled, host-decontaminated paired-end reads and pre-computed MetaPhlAn taxonomic profiles, and performs downstream functional characterization using HUMAnN together with antimicrobial resistance profiling through RGI/CARD.
 
-## Overview
+FUNCMAP integrates two complementary read-mapping-based branches:
 
-FUNCMAP can run two complementary analysis branches:
-
-- **HUMAnN workflow** for microbial functional profiling at gene family, pathway, module, CAZy, Pfam, eggNOG and KO level.
+- **HUMAnN workflow** for microbial functional profiling at gene family, pathway, KEGG Orthology, KEGG module, CAZy, Pfam and eggNOG levels.
 - **AMR/RGI-CARD workflow** for antimicrobial resistance gene profiling from paired-end reads using RGI bwt.
 
 The two branches can be run together or independently using pipeline parameters.
@@ -73,29 +71,42 @@ FUNCMAP requires:
   - RGI/CARD tools
   - Python
   - required Python libraries
-- HUMAnN databases
-- CARD/RGI database
-- Paired-end shotgun metagenomic reads
-- MetaPhlAn taxonomic profiles for the HUMAnN branch
+- Quality-controlled paired-end shotgun metagenomic reads
+- Host-decontaminated reads, when human or host contamination removal is required
+- Pre-computed MetaPhlAn taxonomic profiles for the HUMAnN branch
+- HUMAnN databases:
+  - ChocoPhlAn
+  - UniRef90
+  - full HUMAnN mapping directory
+- A preloaded local CARD/RGI database for the AMR branch
+
+FUNCMAP does not currently perform read preprocessing, host decontamination or taxonomic profiling. These steps should be performed upstream, for example using nf-core/taxprofiler or an equivalent workflow.
 
 ## Quick start
 
+FUNCMAP provides a default public container through GitHub Container Registry:
+
+```text
+oras://ghcr.io/gabriele-conti/funcmap:0.0.2
+```
+A typical SLURM + Apptainer run is:
+
 ```bash
-nextflow run /path/to/FUNCMAP \
+nextflow run Gabriele-Conti/FUNCMAP -r v0.0.2 \
   -profile slurm,apptainer \
   --input /path/to/samplesheet.csv \
   --dbsheet /path/to/databases_funcmap.csv \
   --outdir /path/to/results \
-  --funcmap_container /path/to/funcmap_container.sif \
+  --apptainer_run_options '-B /path/to/databases:/path/to/databases -B /path/to/work_dir:/path/to/work_dir' \
   -work-dir /path/to/work \
   -resume
 ```
 
-For local execution:
+To use a local SIF container instead of the default online container:
 
 ```bash
-nextflow run /path/to/FUNCMAP \
-  -profile local,apptainer \
+nextflow run Gabriele-Conti/FUNCMAP -r v0.0.2 \
+  -profile slurm,apptainer \
   --input /path/to/samplesheet.csv \
   --dbsheet /path/to/databases_funcmap.csv \
   --outdir /path/to/results \
@@ -163,12 +174,16 @@ The database sheet defines the external database paths used by the pipeline.
 Example:
 
 ```csv
-tool,db_name,db_params,db_path
-humann,chocophlan,,/path/to/humann/chocophlan
-humann,uniref90,,/path/to/humann/uniref90
-humann,full_mapping_v201901b,,/path/to/humann/full_mapping_v201901b
-rgi,card,local,/path/to/CARD_RGI
+tool,db_name,db_path
+humann,chocophlan,/path/to/humann/chocophlan
+humann,uniref90,/path/to/humann/uniref90
+humann,full_mapping_v201901b,/path/to/humann/full_mapping_v201901b
+rgi,CARD,/path/to/preloaded/CARD_RGI
 ```
+
+The db_path column must point to database directories that are already available on the execution system and visible inside the container.
+
+FUNCMAP does not currently download or prepare HUMAnN or CARD/RGI databases automatically.
 
 The exact database requirements are described in:
 
@@ -196,6 +211,7 @@ docs/databases.md
 | `--humann_renorm_units` | HUMAnN renormalization mode. | `full` |
 | `--amr_apply_filters` | Apply filters to RGI rows before AMR table generation. | `false` |
 | `--amr_min_reads` | Minimum mapped reads for AMR filtering. | `10` |
+| `--apptainer_run_options` | Optional Apptainer runtime options, for example bind mounts required to expose database paths inside the container. | `''` |
 | `--amr_min_coverage` | Minimum average percent coverage for AMR filtering. | `55` |
 | `--amr_min_mapq` | Minimum average MAPQ for AMR filtering. | `10` |
 | `--amr_relab_from` | Metric used to calculate AMR relative abundance. | `rpkm` |

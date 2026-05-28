@@ -3,15 +3,19 @@ process AMR_JOIN {
     tag "amr_join"
     container params.funcmap_container
 
+    // Publish globally merged AMR tables to AMR_MERGED_TABLES.
     publishDir "${params.outdir}/AMR_MERGED_TABLES",
         mode: 'copy',
         pattern: "amr_*",
         overwrite: true
 
     input:
+    // Receive all parsed per-sample AMR tables from the channel.
+    // Files are staged by Nextflow under AMR_INPUT_TABLES/.
     tuple val(sample_ids), path(amr_tables, name: 'AMR_INPUT_TABLES/*')
 
     output:
+    // Emit all merged AMR abundance and QC tables.
     path "amr_*"
 
     script:

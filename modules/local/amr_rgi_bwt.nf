@@ -3,15 +3,18 @@ process AMR_RGI_BWT {
     tag { sample_id }
     container params.funcmap_container
 
+    // Publish all per-sample RGI output files to the final AMR_OUTS directory.
     publishDir "${params.outdir}/AMR_OUTS",
         mode: 'copy',
         overwrite: true
 
     input:
+    // Paired-end reads for AMR profiling and the database sheet.
     tuple val(sample_id), path(r1), path(r2)
     path dbsheet
 
     output:
+    // Emit the main RGI BWT output tables and logs required by downstream parsing.
     tuple val(sample_id),
           path("${sample_id}/${sample_id}.rgi.gene_mapping_data.txt"),
           path("${sample_id}/${sample_id}.rgi.allele_mapping_data.txt"),
@@ -36,7 +39,7 @@ process AMR_RGI_BWT {
 
     CARD_DB=\$(awk -F',' '
         NR > 1 && \$1 == "rgi" {
-            print \$4
+            print \$3
             exit
         }
     ' "$dbsheet")
@@ -44,8 +47,8 @@ process AMR_RGI_BWT {
     if [ -z "\$CARD_DB" ]; then
         echo "[ERROR] No RGI/CARD database found in dbsheet: $dbsheet"
         echo "[ERROR] Expected a row like:"
-        echo "tool,db_name,db_params,db_path"
-        echo "rgi,CARD,local,/path/to/CARD_RGI"
+        echo "tool,db_name,db_path"
+        echo "rgi,CARD,/path/to/preloaded/CARD_RGI"
         exit 1
     fi
 

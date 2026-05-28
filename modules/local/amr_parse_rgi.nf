@@ -3,11 +3,13 @@ process AMR_PARSE_RGI {
     tag { sample_id }
     container params.funcmap_container
 
+    // Publish parsed AMR abundance and QC tables to the final AMR_OUTS directory.
     publishDir "${params.outdir}/AMR_OUTS",
         mode: 'copy',
         overwrite: true
 
     input:
+    // Main RGI BWT outputs produced by AMR_RGI_BWT.
     tuple val(sample_id),
           path(gene_mapping),
           path(allele_mapping),
@@ -18,6 +20,7 @@ process AMR_PARSE_RGI {
           path(stderr_log)
 
     output:
+    // Emit all parsed AMR abundance and QC tables for downstream merging.
     tuple val(sample_id),
           path("${sample_id}/*.amr_*.tsv")
 

@@ -5,6 +5,37 @@
 # copied project-specific params file.
 
 # ------------------------------------------------------------
+# Input / output
+# ------------------------------------------------------------
+
+# Input samplesheet and database sheet are usually passed from the command line:
+#   --input samplesheet.csv
+#   --dbsheet databases_funcmap.csv
+#   --outdir results
+#
+# input: null
+# dbsheet: null
+# outdir: results
+
+# ------------------------------------------------------------
+# Container
+# ------------------------------------------------------------
+
+# Default public FUNCMAP container.
+# Can be overridden with a local SIF file:
+#   funcmap_container: /path/to/funcmap.sif
+#
+# Or with another ORAS/GHCR image:
+#   funcmap_container: oras://ghcr.io/gabriele-conti/funcmap:0.0.2
+funcmap_container: oras://ghcr.io/gabriele-conti/funcmap:0.0.2
+
+# Optional Apptainer runtime bind options.
+# Keep empty for portable defaults.
+# Example for Gabriele's HPC:
+#   apptainer_run_options: "-B /scratch:/scratch -B /dati:/dati"
+apptainer_run_options: ""
+
+# ------------------------------------------------------------
 # Workflow switches
 # ------------------------------------------------------------
 

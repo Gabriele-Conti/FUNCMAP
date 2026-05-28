@@ -3,9 +3,11 @@ process HUMANN_RENAME {
     tag { sample_id }
     container params.funcmap_container
 
+    // Publish all per-sample HUMAnN tables to the final HUMANN_OUTS directory.
     publishDir "${params.outdir}/HUMANN_OUTS", mode: 'copy'
 
     input:
+    // Inputs produced by HUMANN_REGROUP.
     tuple val(sample_id),
           path(gene_fam),
           path(path_abund),
@@ -18,6 +20,7 @@ process HUMANN_RENAME {
     path dbsheet
 
     output:
+    // Emit original regrouped tables plus named annotation tables.
     tuple val(sample_id),
           path("${sample_id}/${sample_id}_genefamilies.tsv"),
           path("${sample_id}/${sample_id}_pathabundance.tsv"),
@@ -39,7 +42,7 @@ process HUMANN_RENAME {
     echo "===== HUMANN_RENAME: ${sample_id} ====="
 
     DB_CSV="$dbsheet"
-    MAP_DIR=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="full_mapping_v201901b" {print \$4}' "\$DB_CSV" | head -n1)
+    MAP_DIR=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="full_mapping_v201901b" {print \$3}' "\$DB_CSV" | head -n1)
 
     if [ -z "\$MAP_DIR" ]; then
         echo "[ERROR] Missing full_mapping_v201901b in \$DB_CSV"
@@ -52,9 +55,11 @@ process HUMANN_RENAME {
     MAP_PFAM_NAME="\$MAP_DIR/map_pfam_name.txt.gz"
     MAP_EGGNOG_NAME="\$MAP_DIR/map_eggnog_name.txt.gz"
 
+    # Canonical per-sample directory within the process work directory.
     HUMANN_DIR="${sample_id}"
     mkdir -p "\$HUMANN_DIR"
 
+    # Copy original tables into the expected per-sample output layout.
     cp "$gene_fam"    "\$HUMANN_DIR/${sample_id}_genefamilies.tsv"
     cp "$path_abund"  "\$HUMANN_DIR/${sample_id}_pathabundance.tsv"
     cp "$ko_tsv"      "\$HUMANN_DIR/${sample_id}_ko.tsv"

@@ -3,7 +3,7 @@ process HUMANN_RUN {
     tag { sample_id }
     container params.funcmap_container
 
-    // Copia gli output HUMANN
+    // Copy selected HUMAnN output files to the final output directory.
     publishDir "${params.outdir}/HUMANN_OUTS/${sample_id}",
         mode: 'copy',
         pattern: "HUMANN_OUTS/${sample_id}/*",
@@ -27,18 +27,18 @@ process HUMANN_RUN {
 
     DB_CSV="$dbsheet"
 
-    CHOCOPHLAN_DB=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="chocophlan" {print \$4}' "\$DB_CSV" | head -n1)
-    UNIREFF_DB=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="uniref90" {print \$4}' "\$DB_CSV" | head -n1)
+    CHOCOPHLAN_DB=$(awk -F, 'NR>1 && $1=="humann" && $2=="chocophlan" {print $3}' "$DB_CSV" | head -n1)
+    UNIREF_DB=$(awk -F, 'NR>1 && $1=="humann" && $2=="uniref90" {print $3}' "$DB_CSV" | head -n1)
 
     echo "[INFO] Using CHOCOPHLAN_DB=\$CHOCOPHLAN_DB"
-    echo "[INFO] Using UNIREFF_DB=\$UNIREFF_DB"
+    echo "[INFO] Using UNIREF_DB=\$UNIREF_DB"
 
-    if [ -z "\$CHOCOPHLAN_DB" ] || [ -z "\$UNIREFF_DB" ]; then
+    if [ -z "\$CHOCOPHLAN_DB" ] || [ -z "\$UNIREF_DB" ]; then
         echo "[ERROR] Missing HUMAnN DB paths in \$DB_CSV"
         exit 1
     fi
 
-    # Struttura interna alla workdir del processo
+    # Internal directory structure within the process work directory.
     MERGED_DIR="MERGED_READS/${sample_id}"
     HUMANN_DIR="HUMANN_OUTS/${sample_id}"
 
@@ -54,7 +54,7 @@ process HUMANN_RUN {
       --threads ${task.cpus} \\
       --taxonomic-profile $mpa_profile \\
       --nucleotide-database "\$CHOCOPHLAN_DB" \\
-      --protein-database "\$UNIREFF_DB" \\
+      --protein-database "\$UNIREF_DB" \\
       --metaphlan /opt/conda/envs/humann4/bin/metaphlan \\
       --memory-use maximum \\
       --verbose \\

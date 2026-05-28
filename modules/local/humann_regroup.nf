@@ -3,17 +3,17 @@ process HUMANN_REGROUP {
     tag { sample_id }
     container params.funcmap_container
 
-    // Pubblica tutte le tabelle per campione in:
+    // Publish all per-sample HUMAnN tables to:
     //   ${params.outdir}/HUMANN_OUTS/sample_id/
     publishDir "${params.outdir}/HUMANN_OUTS", mode: 'copy'
 
     input:
-    // Questi arrivano da HUMANN_RUN (genefamilies e pathabundance)
+    // Inputs produced by HUMANN_RUN: genefamilies and pathabundance tables.
     tuple val(sample_id), path(gene_fam_in), path(path_abund_in)
     path dbsheet
 
     output:
-    // Ora tutto è sotto HUMANN_OUTS/sample_id/
+    // All output tables are stored under HUMANN_OUTS/sample_id/.
     tuple val(sample_id),
           path("${sample_id}/${sample_id}_genefamilies.tsv"),
           path("${sample_id}/${sample_id}_pathabundance.tsv"),
@@ -31,7 +31,7 @@ process HUMANN_REGROUP {
     echo "===== HUMANN_REGROUP: ${sample_id} ====="
 
     DB_CSV="$dbsheet"
-    MAP_DIR=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="full_mapping_v201901b" {print \$4}' "\$DB_CSV" | head -n1)
+    MAP_DIR=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="full_mapping_v201901b" {print \$3}' "\$DB_CSV" | head -n1)
 
     if [ -z "\$MAP_DIR" ]; then
         echo "[ERROR] Missing full_mapping_v201901b in \$DB_CSV"
@@ -45,11 +45,11 @@ process HUMANN_REGROUP {
     MAP_PFAM_UNIREF="\$MAP_DIR/map_pfam_uniref90.txt.gz"
     MAP_EGGNOG_UNIREF="\$MAP_DIR/map_eggnog_uniref90.txt.gz"
 
-    # Cartella canonica per questo sample nella workdir del processo
+    # Canonical per-sample directory within the process work directory.
     HUMANN_DIR="${sample_id}"
     mkdir -p "\$HUMANN_DIR"
 
-    # Copio (o rinomino) le tabelle di input nel layout desiderato
+    # Copy input tables into the expected per-sample output layout.
     GENE_FAM="\$HUMANN_DIR/${sample_id}_genefamilies.tsv"
     PATH_ABUND="\$HUMANN_DIR/${sample_id}_pathabundance.tsv"
 
