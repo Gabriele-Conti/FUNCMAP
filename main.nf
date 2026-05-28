@@ -65,6 +65,25 @@ requireParam(outdir, 'outdir')
 
 requireExistingFile(input_csv, 'Input samplesheet')
 requireExistingFile(dbsheet_csv, 'Database sheet')
+def dbsheet_header = file(dbsheet_csv).readLines().find { it?.trim() }
+
+if (dbsheet_header != 'tool,db_name,db_path') {
+    exit 1, """
+    ERROR: invalid database sheet header.
+
+    Expected:
+    tool,db_name,db_path
+
+    Found:
+    ${dbsheet_header}
+
+    Example:
+    humann,chocophlan,/path/to/humann/chocophlan
+    humann,uniref90,/path/to/humann/uniref90
+    humann,full_mapping_v201901b,/path/to/humann/full_mapping_v201901b
+    rgi,CARD,/path/to/preloaded/CARD_RGI
+    """.stripIndent()
+}
 
 if (!run_humann && !run_amr) {
     exit 1, "ERROR: Nothing to do. At least one between --run_humann and --run_amr must be true"

@@ -47,6 +47,8 @@ PARAMS_FILE="${PIPELINE_DIR}/assets/params.example.yaml"
 DBSHEET="${PROJECT_DIR}/databases_funcmap.csv"
 
 # FUNCMAP Apptainer/Singularity container
+# Optional local container override.
+# Leave empty to use the default online container defined in nextflow.config.
 FUNCMAP_SIF="/path/to/funcmap_container.sif"
 
 # Read/profile naming options
