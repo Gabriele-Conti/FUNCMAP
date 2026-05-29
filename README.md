@@ -322,9 +322,9 @@ docs/usage.md
 
 ## Development status
 
-FUNCMAP is currently under active development.
+FUNCMAP `v0.0.2` is the first stable release validated on a full test dataset.
 
-The current version is:
+The current stable version is:
 
 ```text
 0.0.2
@@ -332,7 +332,11 @@ The current version is:
 
 ## Citation
 
-A citation will be added once the pipeline is formally released.
+If you use FUNCMAP in your work, please cite the software repository:
+
+```text
+Conti, G. (2026). FUNCMAP: a read-mapping-based Nextflow pipeline for HUMAnN functional profiling and RGI/CARD antimicrobial resistance analysis of shotgun metagenomic data (v0.0.2). GitHub. https://github.com/Gabriele-Conti/FUNCMAP
+```
 
 ## License
 

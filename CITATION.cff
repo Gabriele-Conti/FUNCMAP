@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use FUNCMAP, please cite it using the metadata from this file."
+type: software
+title: "FUNCMAP: a read-mapping-based Nextflow pipeline for HUMAnN functional profiling and RGI/CARD antimicrobial resistance analysis of shotgun metagenomic data"
+authors:
+  - family-names: "Conti"
+    given-names: "Gabriele"
+    affiliation: "University of Bologna"
+version: "0.0.2"
+date-released: "2026-05-29"
+repository-code: "https://github.com/Gabriele-Conti/FUNCMAP"
+url: "https://github.com/Gabriele-Conti/FUNCMAP"
+license: "MIT"
+abstract: >-
+  FUNCMAP is a Nextflow DSL2 pipeline for downstream read-mapping-based
+  functional profiling of shotgun metagenomic data. It integrates HUMAnN-based
+  microbial functional profiling with antimicrobial resistance profiling through
+  RGI/CARD, producing per-sample outputs and merged downstream-ready abundance
+  tables.
+keywords:
+  - metagenomics
+  - microbiome
+  - functional profiling
+  - antimicrobial resistance
+  - HUMAnN
+  - RGI
+  - CARD
+  - Nextflow
+  - bioinformatics
