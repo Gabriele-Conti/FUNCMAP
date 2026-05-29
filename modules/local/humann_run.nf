@@ -25,10 +25,10 @@ process HUMANN_RUN {
 
     echo "===== HUMANN_RUN: ${sample_id} ====="
 
-    DB_CSV="$dbsheet"
+    DB_CSV="${dbsheet}"
 
-    CHOCOPHLAN_DB=$(awk -F, 'NR>1 && $1=="humann" && $2=="chocophlan" {print $3}' "$DB_CSV" | head -n1)
-    UNIREF_DB=$(awk -F, 'NR>1 && $1=="humann" && $2=="uniref90" {print $3}' "$DB_CSV" | head -n1)
+    CHOCOPHLAN_DB=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="chocophlan" {print \$3}' "\$DB_CSV" | head -n1)
+    UNIREF_DB=\$(awk -F, 'NR>1 && \$1=="humann" && \$2=="uniref90" {print \$3}' "\$DB_CSV" | head -n1)
 
     echo "[INFO] Using CHOCOPHLAN_DB=\$CHOCOPHLAN_DB"
     echo "[INFO] Using UNIREF_DB=\$UNIREF_DB"

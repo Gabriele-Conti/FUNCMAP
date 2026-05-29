@@ -36,21 +36,24 @@ EOF_SAMPLE_IDS
         exit 1
     fi
 
+    TSV_COUNT=\$(find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | wc -l | tr -d ' ')
+
     echo "[INFO] Using parsed AMR tables staged by Nextflow in: \$INPUT_DIR"
     echo "[INFO] Number of sample IDs received: \$(wc -l < "\$SAMPLE_IDS")"
-    echo "[INFO] Number of staged AMR TSV files: \$(find -L "\$INPUT_DIR" -name '*.tsv' | wc -l)"
+    echo "[INFO] Number of staged AMR TSV entries: \$TSV_COUNT"
     echo "[INFO] Writing merged AMR tables to current work directory: \$PWD"
 
-    if ! find -L "\$INPUT_DIR" -name '*.tsv' | grep -q .; then
+    if [ "\$TSV_COUNT" -eq 0 ]; then
         echo "[ERROR] No parsed AMR TSV files were staged for merging"
         echo "[DEBUG] Content of \$INPUT_DIR:"
         ls -lah "\$INPUT_DIR" || true
+        echo "[DEBUG] Directory tree:"
         find "\$INPUT_DIR" -maxdepth 3 -ls || true
         exit 1
     fi
 
     echo "[INFO] Staged AMR tables:"
-    find -L "\$INPUT_DIR" -name '*.tsv' -printf '  %P\\n' | sort
+    find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' -printf '  %f\\n' | sort
 
     python ${projectDir}/bin/merge_amr_tables.py \\
         --input-dir "\$INPUT_DIR" \\
@@ -75,6 +78,10 @@ EOF_SAMPLE_IDS
     do
         if [ ! -s "\$f" ]; then
             echo "[ERROR] Missing expected merged AMR output: \$f"
+            echo "[DEBUG] Available files in current work directory:"
+            ls -lah
+            echo "[DEBUG] Available AMR-like outputs:"
+            ls -lh amr_* 2>/dev/null || true
             exit 1
         fi
     done

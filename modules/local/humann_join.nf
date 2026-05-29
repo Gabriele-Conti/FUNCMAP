@@ -51,14 +51,17 @@ EOF_SAMPLE_IDS
       exit 1
   fi
 
+  TSV_COUNT=\$(find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | wc -l | tr -d ' ')
+
   echo "[INFO] Using HUMAnN tables staged by Nextflow in: \$INPUT_DIR"
   echo "[INFO] Number of sample IDs received: \$(wc -l < "\$SAMPLE_IDS")"
-  echo "[INFO] Number of staged TSV entries: \$(find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | wc -l)"
+  echo "[INFO] Number of staged TSV entries: \$TSV_COUNT"
 
-  if ! find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' | grep -q .; then
+  if [ "\$TSV_COUNT" -eq 0 ]; then
       echo "[ERROR] No HUMAnN TSV files were staged for merging"
       echo "[DEBUG] Content of \$INPUT_DIR:"
       ls -lah "\$INPUT_DIR" || true
+      echo "[DEBUG] Directory tree:"
       find "\$INPUT_DIR" -maxdepth 2 -ls || true
       exit 1
   fi
@@ -193,14 +196,16 @@ EOF_SAMPLE_IDS
         cp "\$f" "\$stage_dir/\$base"
     done
 
-    if ! ls "\$stage_dir"/*"\$suffix" >/dev/null 2>&1; then
+    FILE_COUNT=\$(find "\$stage_dir" -maxdepth 1 -name "*\$suffix" | wc -l | tr -d ' ')
+
+    if [ "\$FILE_COUNT" -eq 0 ]; then
         echo "[ERROR] No files staged for suffix: \$suffix"
         echo "[DEBUG] Available input files:"
         find "\$INPUT_DIR" -maxdepth 1 -name '*.tsv' -printf '  %f\\n' | sort
         exit 1
     fi
 
-    echo "[INFO] Files staged for suffix \$suffix:"
+    echo "[INFO] Files staged for suffix \$suffix: \$FILE_COUNT"
     ls -lh "\$stage_dir"/*"\$suffix"
 
     humann_join_tables \\
@@ -210,6 +215,8 @@ EOF_SAMPLE_IDS
 
     if [ ! -s "\$output" ]; then
         echo "[ERROR] humann_join_tables did not create output: \$output"
+        echo "[DEBUG] Stage directory content:"
+        ls -lah "\$stage_dir" || true
         exit 1
     fi
 
