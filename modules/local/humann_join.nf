@@ -3,8 +3,8 @@ process HUMANN_JOIN {
   tag "humann_join"
   container params.funcmap_container
 
-  // Publish globally merged HUMAnN tables to MERGED_TABLES.
-  publishDir "${params.outdir}/MERGED_TABLES",
+  // Publish globally merged HUMAnN tables to HUMANN_MERGED_TABLES.
+  publishDir "${params.outdir}/HUMANN_MERGED_TABLES",
     mode: 'copy',
     pattern: "JOIN_WORK/humann_merged_*",
     overwrite: true,
